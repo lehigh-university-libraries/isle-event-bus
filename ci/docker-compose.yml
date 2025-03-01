@@ -1,0 +1,23 @@
+services:
+    activemq:
+      image: islandora/activemq:main
+      ports:
+        - "8161:8161"
+    riq:
+      image: libops/riq:main
+      depends_on:
+        activemq:
+          condition: service_healthy
+    file-server:
+      image: fs:main
+      volumes:
+        - ./fixtures:/tmp:rw
+    test:
+      image: alpine@sha256:a8560b36e8b8210634f77d9f7f9efd7ffa463e380b75e2e74aff4511df3ef88c
+      command: tail -f /dev/null
+      volumes:
+        - ./test.sh:/test.sh
+        - ./fixtures:/tmp:r
+      depends_on:
+        riq:
+          condition: service_started

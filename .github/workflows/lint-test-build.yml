@@ -1,0 +1,99 @@
+name: lint-test-build-push
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - 'ci/**'
+      - 'docs/**'
+      - '.github/workflows/deploy-docs.yml'
+      - '.github/workflows/delete.yml'
+      - 'renovate.json5'
+    tags:
+      - '*'
+    branches:
+      - '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+jobs:
+
+  lint-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: check valid yml
+        run: yq . riq.yaml
+
+      - name: check valid sh
+        run: shellcheck *.sh
+
+      - uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5
+        with:
+          go-version: '>=1.22.2'
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@2226d7cb06a077cd73e56eedd38eecad18e5d837 # v6
+        with:
+          version: latest
+      
+      - name: Install dependencies
+        run: go get .
+
+      - name: unit test
+        run: go test -v -race ./...
+
+      - name: integration test
+        run: ./ci/run.sh
+
+  build-push:
+    needs: [lint-test]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # v4
+
+      - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
+        with:
+          dockerfile: ${{ inputs.dockerFile }}
+          verbose: true
+
+      - name: Extract branch or tag name as docker tag
+        shell: bash
+        run: |-
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG=$(echo "${GITHUB_REF#refs/tags/}" | sed 's/[^a-zA-Z0-9._-]//g' | awk '{print substr($0, length($0)-120)}')
+          else
+            TAG=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/[^a-zA-Z0-9._-]//g' | awk '{print substr($0, length($0)-120)}')
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+        id: extract_tag
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3
+
+      - name: Docker Hub Login
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Build and push ghcr
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/libops/riq:${{steps.extract_tag.outputs.tag}}
