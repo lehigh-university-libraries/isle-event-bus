@@ -1,0 +1,19 @@
+site_name: riq
+site_url: https://libops.github.io/riq/
+
+repo_url: https://github.com/libops/riq
+edit_uri: 'edit/main/docs/'
+
+theme: material
+plugins:
+  - search
+  - social
+  - tags
+  - mermaid2
+
+nav:
+  - Home: index.md
+extra_css:
+    - css/extra.css
+extra_javascript:
+    - js/extra.js

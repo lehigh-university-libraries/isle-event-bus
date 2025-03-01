@@ -1,0 +1,21 @@
+queues:
+  - queueName: islandora-connector-fits
+    url: https://microservices.libops.site/crayfits
+    consumers: 1
+    putFile: true
+  - queueName: islandora-connector-homarus
+    url: https://microservices.libops.site/homarus
+    consumers: 1
+    putFile: true
+  - queueName: islandora-connector-houdini
+    url: https://microservices.libops.site/houdini
+    consumers: 1
+    putFile: true
+  - queueName: islandora-connector-hypercube
+    url: https://microservices.libops.site/hypercube
+    consumers: 1
+    putFile: true
+  - queueName: islandora-connector-pandoc
+    url: https://microservices.libops.site/pandoc
+    consumers: 1
+    putFile: true
