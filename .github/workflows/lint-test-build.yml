@@ -61,7 +61,6 @@ jobs:
 
       - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
         with:
-          dockerfile: ${{ inputs.dockerFile }}
           verbose: true
 
       - name: Extract branch or tag name as docker tag
