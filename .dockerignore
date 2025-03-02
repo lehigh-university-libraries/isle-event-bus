@@ -1,5 +1,10 @@
 riq
-ci
-docs
+./ci
+./docs
 *.json
-.*
+./.github
+./.git
+./.*
+./Dockerfile
+./README.md
+./renovate.json5
