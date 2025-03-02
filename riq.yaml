@@ -11,7 +11,7 @@ queues:
     url: https://microservices.libops.site/houdini
     consumers: 1
     putFile: true
-  - queueName: islandora-connector-hypercube
+  - queueName: islandora-connector-ocr
     url: https://microservices.libops.site/hypercube
     consumers: 1
     putFile: true
