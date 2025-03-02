@@ -1,6 +1,6 @@
 services:
     activemq:
-      image: islandora/activemq:main
+      image: islandora/activemq:main@sha256:167f8ad44e0489be36b912d33f0eab7a2ee87ab137385c85a48f8bc1cc02e222
       ports:
         - "8161:8161"
     riq:
