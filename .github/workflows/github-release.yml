@@ -27,5 +27,6 @@ jobs:
           git tag "$TAG"
           git push origin $TAG
           gh release create $TAG --title "$TAG" --generate-notes
+          gh workflow run goreleaser.yml --ref $TAG
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,55 +1,31 @@
 package stomp
 
 import (
-	"context"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"log/slog"
-	"net"
 	"net/http"
-	"os"
-	"time"
 
 	stomp "github.com/go-stomp/stomp/v3"
 	"github.com/lehigh-university-libraries/scyllaridae/pkg/api"
 	"github.com/libops/riq/internal/utils"
 )
 
-type Queue struct {
-	Name        string `yaml:"queueName"`
-	Url         string `yaml:"url"`
-	Consumers   int    `yaml:"consumers,omitempty"`
-	ForwardAuth bool   `yaml:"forwardAuth,omitempty"`
-	// for services that do not require creating a derivative, set to true
-	NoPut bool `yaml:"noPut"`
-	// whether or not to directly upload the file supplied in the islandora event
-	// to the scyllaridae service
-	PutFile bool `yaml:"putFile"`
-}
-
-func (middleware Queue) HandleMessage(msg *stomp.Message) {
-	islandoraMessage, err := api.DecodeEventMessage(msg.Body)
-	if err != nil {
-		slog.Error("Unable to decode event message", "err", err)
-		return
-	}
-
-	method := http.MethodGet
+func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMessage *api.Payload) {
 	var (
 		body    io.ReadCloser
 		errCode int
+		err     error
+		method  = http.MethodGet
+		auth    = msg.Header.Get("Authorization")
 	)
-	auth := msg.Header.Get("Authorization")
 	if middleware.PutFile {
 		method = http.MethodPost
-		body, errCode, err = utils.GetFileStream(&islandoraMessage, auth)
+		body, errCode, err = utils.GetFileStream(islandoraMessage, auth)
 		if err != nil {
 			slog.Error("Unable to decode event message", "err", err, "code", errCode)
 			return
 		}
-	} else {
-		body = nil
 	}
 
 	req, err := http.NewRequest(method, middleware.Url, body)
@@ -130,93 +106,5 @@ func (middleware Queue) HandleMessage(msg *stomp.Message) {
 		slog.Error("Failed to PUT data", "url", islandoraMessage.Attachment.Content.DestinationURI, "status", putResp.StatusCode)
 	} else {
 		slog.Info("Successfully PUT data to", "url", islandoraMessage.Attachment.Content.DestinationURI, "status", putResp.StatusCode)
-	}
-}
-
-func (middleware Queue) RecvAndProcessMessage(ctx context.Context) error {
-	addr := os.Getenv("STOMP_SERVER_ADDR")
-	if addr == "" {
-		addr = "activemq:61613"
-	}
-
-	c, err := net.Dial("tcp", addr)
-	if err != nil {
-		slog.Error("Cannot connect to port", "queue", middleware.Name, "err", err.Error())
-		return err
-	}
-	tcpConn := c.(*net.TCPConn)
-
-	err = tcpConn.SetKeepAlive(true)
-	if err != nil {
-		slog.Error("Cannot set keepalive", "queue", middleware.Name, "err", err.Error())
-		return err
-	}
-
-	err = tcpConn.SetKeepAlivePeriod(10 * time.Second)
-	if err != nil {
-		slog.Error("Cannot set keepalive period", "queue", middleware.Name, "err", err.Error())
-		return err
-	}
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-			for {
-				conn, err := stomp.Connect(tcpConn,
-					stomp.ConnOpt.HeartBeat(10*time.Second, 10*time.Second),
-					stomp.ConnOpt.HeartBeatGracePeriodMultiplier(1.5),
-					stomp.ConnOpt.HeartBeatError(60*time.Second),
-				)
-				if err != nil {
-					slog.Error("Cannot connect to STOMP server", "queue", middleware.Name, "err", err.Error())
-					return err
-				}
-				defer func() {
-					err := conn.Disconnect()
-					if err != nil {
-						slog.Error("Problem disconnecting from STOMP server", "err", err)
-					}
-				}()
-				sub, err := conn.Subscribe(middleware.Name, stomp.AckClient)
-				if err != nil {
-					slog.Error("Cannot subscribe to queue", "queue", middleware.Name, "err", err.Error())
-					return err
-				}
-				defer func() {
-					if !sub.Active() {
-						return
-					}
-					err := sub.Unsubscribe()
-					if err != nil {
-						slog.Error("Problem unsubscribing", "err", err)
-					}
-				}()
-				slog.Info("Subscribed to queue", "queue", middleware.Name)
-
-				for {
-					// Wait for the next message (blocks if the channel is empty)
-					msg, ok := <-sub.C
-					if !ok {
-						return fmt.Errorf("subscription to %s is closed", middleware.Name)
-					}
-
-					if msg == nil || len(msg.Body) == 0 {
-						if !sub.Active() {
-							return fmt.Errorf("no longer subscribed to %s", middleware.Name)
-						}
-						continue
-					}
-
-					// Process the message synchronously
-					middleware.HandleMessage(msg)
-
-					err := msg.Conn.Ack(msg)
-					if err != nil {
-						slog.Error("Failed to acknowledge message", "queue", middleware.Name, "error", err)
-					}
-				}
-			}
-		}
 	}
 }
