@@ -20,12 +20,6 @@ func main() {
 
 func customFileHandler(root http.FileSystem) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodHead {
-			ext := filepath.Ext(r.URL.Path)
-			w.Header().Set("Content-Type", typeByExtension(ext))
-			w.WriteHeader(http.StatusOK)
-			return
-		}
 		f, err := root.Open(r.URL.Path)
 		if err != nil {
 			http.NotFound(w, r)
@@ -39,6 +33,9 @@ func customFileHandler(root http.FileSystem) http.Handler {
 		}
 		w.Header().Set("Content-Type", typeByExtension(ext))
 		w.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodHead {
+			return
+		}
 		io.Copy(w, f)
 	})
 }
