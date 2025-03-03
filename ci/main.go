@@ -31,6 +31,7 @@ func customFileHandler(root http.FileSystem) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
+		ext := filepath.Ext(r.URL.Path)
 		w.Header().Set("Content-Type", typeByExtension(ext))
 		w.WriteHeader(http.StatusOK)
 		if r.Method == http.MethodHead {
