@@ -37,14 +37,7 @@ func customFileHandler(root http.FileSystem) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		buf := make([]byte, 512)
-		n, err := f.Read(buf)
-		if err != nil && err != io.EOF {
-			http.NotFound(w, r)
-			return
-		}
-		_, _ = f.Seek(0, 0)
-		w.Header().Set("Content-Type", http.DetectContentType(buf[:n]))
+		w.Header().Set("Content-Type", typeByExtension(ext))
 		w.WriteHeader(http.StatusOK)
 		io.Copy(w, f)
 	})
