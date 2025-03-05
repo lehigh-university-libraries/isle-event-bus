@@ -121,9 +121,13 @@ func (middleware Queue) RecvAndProcessMessage(ctx context.Context) error {
 					}
 
 					// Process the message synchronously
-					middleware.HandleMessage(msg)
+					err := middleware.HandleMessage(msg)
+					if err != nil {
+						slog.Error("Failed to process message", "error", err)
+						continue
+					}
 
-					err := msg.Conn.Ack(msg)
+					err = msg.Conn.Ack(msg)
 					if err != nil {
 						slog.Error("Failed to acknowledge message", "queue", middleware.Name, "error", err)
 					}
