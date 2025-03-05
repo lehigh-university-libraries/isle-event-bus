@@ -64,7 +64,8 @@ func TestHandleIndexMessage(t *testing.T) {
 	}
 
 	// Call the function
-	mockQueue.HandleIndexMessage(msg, event)
+	err := mockQueue.HandleIndexMessage(msg, event)
+	assert.Nil(t, err)
 
 	// Assertions
 	assert.Len(t, receivedRequests, 2, "Expected two requests to the receiving server")
