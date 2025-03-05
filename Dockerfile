@@ -34,7 +34,7 @@ RUN apk add --no-cache --virtual .gosu-deps \
 
 WORKDIR /app
 
-RUN adduser -S -G nobody riq
+RUN adduser -S -G nobody isle-event-bus
 
 RUN apk update && \
     apk add --no-cache \
@@ -45,10 +45,10 @@ RUN apk update && \
 
 COPY . ./
 
-RUN chown -R riq:nobody /app
+RUN chown -R isle-event-bus:nobody /app
 
 RUN go mod download && \
-  go build -o /app/riq && \
+  go build -o /app/isle-event-bus && \
   go clean -cache -modcache
 
 ENTRYPOINT ["/bin/bash"]

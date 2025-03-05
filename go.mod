@@ -1,4 +1,4 @@
-module github.com/libops/riq
+module github.com/libops/isle-event-bus
 
 go 1.23.4
 

@@ -1,6 +1,6 @@
-# riq
+# isle-event-bus
 
-riq reads the Islandora Queue and processes the event.
+isle-event-bus reads the Islandora Queue and processes the event.
 
 ## Basic overview
 

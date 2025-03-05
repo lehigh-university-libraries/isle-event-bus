@@ -1,7 +1,7 @@
-site_name: riq
-site_url: https://libops.github.io/riq/
+site_name: isle-event-bus
+site_url: https://libops.github.io/isle-event-bus/
 
-repo_url: https://github.com/libops/riq
+repo_url: https://github.com/libops/isle-event-bus
 edit_uri: 'edit/main/docs/'
 
 theme: material

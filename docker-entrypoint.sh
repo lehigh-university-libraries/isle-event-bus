@@ -8,5 +8,5 @@ if [ -f /app/ca.pem ]; then
     update-ca-certificates
 fi
 
-echo "starting riq"
-exec gosu riq /app/riq
+echo "starting isle-event-bus"
+exec gosu isle-event-bus /app/isle-event-bus

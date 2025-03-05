@@ -8,12 +8,12 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/libops/riq/internal/config"
-	"github.com/libops/riq/internal/stomp"
+	"github.com/libops/isle-event-bus/internal/config"
+	"github.com/libops/isle-event-bus/internal/stomp"
 )
 
 func main() {
-	config, err := config.ReadConfig("riq.yaml")
+	config, err := config.ReadConfig("isle-event-bus.yaml")
 	if err != nil {
 		slog.Error("Could not read YML", "err", err)
 		os.Exit(1)

@@ -6,7 +6,7 @@ SCRIPT_DIR=$(dirname "$(realpath "$0")")
 cd "$SCRIPT_DIR/../"
 
 docker build \
-  -t libops/riq:main .
+  -t libops/isle-event-bus:main .
 
 cd "$SCRIPT_DIR"
 docker build \

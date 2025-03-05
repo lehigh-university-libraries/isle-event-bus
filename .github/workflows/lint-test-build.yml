@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: check valid yml
-        run: yq . riq.yaml
+        run: yq . isle-event-bus.yaml
 
       - name: check valid sh
         run: shellcheck *.sh
@@ -95,4 +95,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/libops/riq:${{steps.extract_tag.outputs.tag}}
+            ghcr.io/libops/isle-event-bus:${{steps.extract_tag.outputs.tag}}

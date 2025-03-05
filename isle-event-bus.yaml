@@ -19,3 +19,24 @@ queues:
     url: https://microservices.libops.site/pandoc
     consumers: 1
     putFile: true
+
+  - queueName: islandora-indexing-fcrepo-content
+    url: http://milliner:8000/
+    eventType: index
+    consumers: 1
+    noPut: true
+  - queueName: islandora-indexing-fcrepo-delete
+    url: http://milliner:8000/
+    eventType: index
+    consumers: 1
+    noPut: true
+  - queueName: islandora-indexing-fcrepo-file-external
+    url: http://milliner:8000/
+    eventType: index
+    consumers: 1
+    noPut: true
+  - queueName: islandora-indexing-fcrepo-media
+    url: http://milliner:8000/
+    eventType: index
+    consumers: 1
+    noPut: true

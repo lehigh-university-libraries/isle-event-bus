@@ -1,6 +1,6 @@
-# riq documentation
+# isle-event-bus documentation
 
-Viewable at https://libops.github.io/riq/
+Viewable at https://libops.github.io/isle-event-bus/
 
 ## Local docs development
 

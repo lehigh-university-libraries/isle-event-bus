@@ -1,8 +1,8 @@
-# riq
+# isle-event-bus
 
-riq reads an Islandora event from ActiveMQ and processes the event from either a microservice running locally or from a service in the cloud.
+isle-event-bus reads an Islandora event from ActiveMQ and processes the event from either a microservice running locally or from a service in the cloud.
 
-🚧 Full documentation is available at https://libops.github.io/riq/
+🚧 Full documentation is available at https://libops.github.io/isle-event-bus/
 
 ## Purpose
 

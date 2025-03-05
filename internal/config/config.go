@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	"github.com/libops/riq/internal/stomp"
+	"github.com/libops/isle-event-bus/internal/stomp"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -16,7 +16,7 @@ func ReadConfig(yp string) (*ServerConfig, error) {
 		y   []byte
 		err error
 	)
-	yml := os.Getenv("RIQ_YML")
+	yml := os.Getenv("isle-event-bus_YML")
 	if yml != "" {
 		y = []byte(yml)
 	} else {

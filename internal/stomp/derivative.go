@@ -8,7 +8,7 @@ import (
 
 	stomp "github.com/go-stomp/stomp/v3"
 	"github.com/lehigh-university-libraries/scyllaridae/pkg/api"
-	"github.com/libops/riq/internal/utils"
+	"github.com/libops/isle-event-bus/internal/utils"
 )
 
 func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMessage *api.Payload) {
