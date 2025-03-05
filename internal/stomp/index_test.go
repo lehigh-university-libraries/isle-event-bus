@@ -39,8 +39,9 @@ func TestHandleIndexMessage(t *testing.T) {
 
 	// Construct the Queue with the mock URL
 	mockQueue := Queue{
-		Url:         receivingServer.URL + "/:uuid",
-		EventMethod: http.MethodPost,
+		Url:              receivingServer.URL + "/:uuid",
+		EventMethod:      http.MethodPost,
+		LocationMimetype: "application/ld+json",
 	}
 
 	// Construct the test event
