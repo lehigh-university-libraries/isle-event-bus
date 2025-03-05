@@ -13,16 +13,15 @@ import (
 
 func (q Queue) HandleIndexMessage(msg *stomp.Message, event *api.Payload) error {
 	uuid := strings.Replace(event.Object.ID, "urn:uuid:", "", 1)
-	slog.Info("Got UUID", "uuid", uuid)
-	jsonldUrl := ""
+	contentLocation := ""
 	for _, url := range event.Object.URL {
-		if url.MediaType == "application/ld+json" {
-			jsonldUrl = url.Href
+		if q.LocationMimetype == url.MediaType {
+			contentLocation = url.Href
 			break
 		}
 	}
 
-	if jsonldUrl == "" {
+	if contentLocation == "" {
 		return fmt.Errorf("can not process message with no JSON LD URL: %v", event)
 	}
 
@@ -37,7 +36,7 @@ func (q Queue) HandleIndexMessage(msg *stomp.Message, event *api.Payload) error 
 
 	go func() {
 		defer wg.Done()
-		if err := q.sendRequest(http.MethodPost, url, auth, jsonldUrl, event); err != nil {
+		if err := q.sendRequest(q.EventMethod, url, auth, contentLocation, event); err != nil {
 			errChan <- err
 
 		}
@@ -46,7 +45,7 @@ func (q Queue) HandleIndexMessage(msg *stomp.Message, event *api.Payload) error 
 	go func() {
 		defer wg.Done()
 		if q.EventMethod != http.MethodDelete && event.Object.IsNewVersion {
-			if err := q.sendRequest(http.MethodPost, versionUrl, auth, jsonldUrl, event); err != nil {
+			if err := q.sendRequest(q.EventMethod, versionUrl, auth, contentLocation, event); err != nil {
 				errChan <- err
 			}
 		}
@@ -71,10 +70,7 @@ func (q Queue) sendRequest(method, url, auth, contentLocation string, event *api
 	}
 	req.Header.Set("Authorization", auth)
 	req.Header.Set("X-Islandora-Fedora-Endpoint", event.Target)
-
-	if contentLocation != "" {
-		req.Header.Set("Content-Location", contentLocation)
-	}
+	req.Header.Set("Content-Location", contentLocation)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

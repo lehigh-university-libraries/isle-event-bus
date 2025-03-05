@@ -25,6 +25,7 @@ queues:
     eventType: index
     eventMethod: POST
     targetHeader: X-Islandora-Fedora-Endpoint
+    locationMimetype: "application/ld+json"
     consumers: 1
     noPut: true
   - queueName: islandora-indexing-fcrepo-delete
@@ -32,11 +33,13 @@ queues:
     eventType: index
     eventMethod: DELETE
     targetHeader: X-Islandora-Fedora-Endpoint
+    locationMimetype: "application/ld+json"
     consumers: 1
     noPut: true
   - queueName: islandora-indexing-fcrepo-file-external
     url: http://milliner:8000/external/:uuid
     targetHeader: X-Islandora-Fedora-Endpoint
+    locationMimetype: "text/html"
     eventType: index
     eventMethod: POST
     consumers: 1
@@ -44,6 +47,7 @@ queues:
   - queueName: islandora-indexing-fcrepo-media
     url: http://milliner:8000/media/:sourceField
     targetHeader: X-Islandora-Fedora-Endpoint
+    locationMimetype: "application/json"
     eventMethod: POST
     eventType: index
     consumers: 1

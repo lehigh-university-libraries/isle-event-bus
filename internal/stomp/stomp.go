@@ -17,9 +17,10 @@ type Queue struct {
 	Url      string `yaml:"url"`
 	Disabled bool   `yaml:"disabled,omitempty"`
 	// index or derivative
-	EventType    string `yaml:"eventType"`
-	EventMethod  string `yaml:"eventMethod"`
-	TargetHeader string `yaml:"targetHeader,omitempty"`
+	EventType        string `yaml:"eventType"`
+	EventMethod      string `yaml:"eventMethod"`
+	TargetHeader     string `yaml:"targetHeader,omitempty"`
+	LocationMimetype string `yaml:"locationMimetype,omitempty"`
 	// how many events to handle at once
 	Consumers   int  `yaml:"consumers"`
 	ForwardAuth bool `yaml:"forwardAuth,omitempty"`
@@ -33,7 +34,7 @@ type Queue struct {
 func (middleware Queue) HandleMessage(msg *stomp.Message) error {
 	islandoraMessage, err := api.DecodeEventMessage(msg.Body)
 	if err != nil {
-		return fmt.Errorf("Unable to decode event message: %v", err)
+		return fmt.Errorf("unable to decode event message: %v", err)
 	}
 
 	if middleware.EventType == "index" {
