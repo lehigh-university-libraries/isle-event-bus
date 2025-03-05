@@ -13,10 +13,14 @@ import (
 )
 
 type Queue struct {
-	Name string `yaml:"queueName"`
-	Url  string `yaml:"url"`
+	Name     string `yaml:"queueName"`
+	Url      string `yaml:"url"`
+	Disabled bool   `yaml:"disabled,omitempty"`
 	// index or derivative
-	EventType string `yaml:"eventType"`
+	EventType        string `yaml:"eventType"`
+	EventMethod      string `yaml:"eventMethod"`
+	TargetHeader     string `yaml:"targetHeader,omitempty"`
+	LocationMimetype string `yaml:"locationMimetype,omitempty"`
 	// how many events to handle at once
 	Consumers   int  `yaml:"consumers"`
 	ForwardAuth bool `yaml:"forwardAuth,omitempty"`
@@ -27,18 +31,18 @@ type Queue struct {
 	PutFile bool `yaml:"putFile,omitempty"`
 }
 
-func (middleware Queue) HandleMessage(msg *stomp.Message) {
+func (middleware Queue) HandleMessage(msg *stomp.Message) error {
 	islandoraMessage, err := api.DecodeEventMessage(msg.Body)
 	if err != nil {
-		slog.Error("Unable to decode event message", "err", err)
-		return
+		return fmt.Errorf("unable to decode event message: %v", err)
 	}
 
 	if middleware.EventType == "index" {
-		middleware.HandleIndexMessage(msg, &islandoraMessage)
-		return
+		err = middleware.HandleIndexMessage(msg, &islandoraMessage)
+		return err
 	}
-	middleware.HandleDerivativeMessage(msg, &islandoraMessage)
+	err = middleware.HandleDerivativeMessage(msg, &islandoraMessage)
+	return err
 }
 
 func (middleware Queue) RecvAndProcessMessage(ctx context.Context) error {
@@ -117,9 +121,13 @@ func (middleware Queue) RecvAndProcessMessage(ctx context.Context) error {
 					}
 
 					// Process the message synchronously
-					middleware.HandleMessage(msg)
+					err := middleware.HandleMessage(msg)
+					if err != nil {
+						slog.Error("Failed to process message", "error", err)
+						continue
+					}
 
-					err := msg.Conn.Ack(msg)
+					err = msg.Conn.Ack(msg)
 					if err != nil {
 						slog.Error("Failed to acknowledge message", "queue", middleware.Name, "error", err)
 					}

@@ -2,6 +2,7 @@ package stomp
 
 import (
 	"encoding/base64"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 	"github.com/libops/isle-event-bus/internal/utils"
 )
 
-func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMessage *api.Payload) {
+func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMessage *api.Payload) error {
 	var (
 		body    io.ReadCloser
 		errCode int
@@ -23,15 +24,13 @@ func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMes
 		method = http.MethodPost
 		body, errCode, err = utils.GetFileStream(islandoraMessage, auth)
 		if err != nil {
-			slog.Error("Unable to decode event message", "err", err, "code", errCode)
-			return
+			return fmt.Errorf("unable to decode event message(%s): %d", err, errCode)
 		}
 	}
 
 	req, err := http.NewRequest(method, middleware.Url, body)
 	if err != nil {
-		slog.Error("Error creating HTTP request", "url", middleware.Url, "err", err)
-		return
+		return fmt.Errorf("error creating HTTP request(%s): %v", middleware.Url, err)
 	}
 
 	mimeType := islandoraMessage.Attachment.Content.SourceMimeType
@@ -39,8 +38,7 @@ func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMes
 		client := &http.Client{}
 		req, err := http.NewRequest(http.MethodHead, islandoraMessage.Attachment.Content.SourceURI, nil)
 		if err != nil {
-			slog.Error("Unable to create source URI request", "uri", islandoraMessage.Attachment.Content.SourceURI, "err", err)
-			return
+			return fmt.Errorf("unable to create source URI request(%s): %v", islandoraMessage.Attachment.Content.SourceURI, err)
 		}
 
 		if auth != "" {
@@ -49,8 +47,7 @@ func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMes
 
 		resp, err := client.Do(req)
 		if err != nil {
-			slog.Error("Unable to get source URI", "uri", islandoraMessage.Attachment.Content.SourceURI, "err", err)
-			return
+			return fmt.Errorf("unable to get source URI (%s): %v", islandoraMessage.Attachment.Content.SourceURI, err)
 		}
 		defer resp.Body.Close()
 		mimeType = resp.Header.Get("Content-Type")
@@ -70,24 +67,21 @@ func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMes
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		slog.Error("Error sending HTTP GET request", "url", middleware.Url, "err", err)
-		return
+		return fmt.Errorf("error sending HTTP GET request (%s): %v", middleware.Url, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 299 {
-		slog.Error("Failed to deliver message", "url", middleware.Url, "status", resp.StatusCode)
-		return
+		return fmt.Errorf("failed to deliver message (%s): %d", middleware.Url, resp.StatusCode)
 	}
 
 	if middleware.NoPut {
-		return
+		return nil
 	}
 
 	putReq, err := http.NewRequest("PUT", islandoraMessage.Attachment.Content.DestinationURI, resp.Body)
 	if err != nil {
-		slog.Error("Error creating HTTP PUT request", "url", islandoraMessage.Attachment.Content.DestinationURI, "err", err)
-		return
+		return fmt.Errorf("error creating HTTP PUT request (%s): %v", islandoraMessage.Attachment.Content.DestinationURI, err)
 	}
 
 	putReq.Header.Set("Authorization", msg.Header.Get("Authorization"))
@@ -97,14 +91,15 @@ func (middleware Queue) HandleDerivativeMessage(msg *stomp.Message, islandoraMes
 	// Send the PUT request
 	putResp, err := client.Do(putReq)
 	if err != nil {
-		slog.Error("Error sending HTTP PUT request", "url", islandoraMessage.Attachment.Content.DestinationURI, "err", err)
-		return
+		return fmt.Errorf("error sending HTTP PUT request (%s): %v", islandoraMessage.Attachment.Content.DestinationURI, err)
 	}
 	defer putResp.Body.Close()
 
 	if putResp.StatusCode >= 299 {
-		slog.Error("Failed to PUT data", "url", islandoraMessage.Attachment.Content.DestinationURI, "status", putResp.StatusCode)
-	} else {
-		slog.Info("Successfully PUT data to", "url", islandoraMessage.Attachment.Content.DestinationURI, "status", putResp.StatusCode)
+		return fmt.Errorf("failed to PUT data (%s): %v", islandoraMessage.Attachment.Content.DestinationURI, err)
 	}
+
+	slog.Info("Successfully PUT data to", "url", islandoraMessage.Attachment.Content.DestinationURI, "status", putResp.StatusCode)
+
+	return nil
 }

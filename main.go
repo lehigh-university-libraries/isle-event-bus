@@ -25,28 +25,32 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	for _, middleware := range config.Queues {
-		numConsumers := middleware.Consumers
+	for _, q := range config.Queues {
+		if q.Disabled {
+			slog.Info("Skipping disabled subscriber", "queue", q.Name)
+			continue
+		}
+		numConsumers := q.Consumers
 		for i := range numConsumers {
 			wg.Add(1)
-			go func(ctx context.Context, middleware stomp.Queue, consumerID int) {
+			go func(ctx context.Context, q stomp.Queue, consumerID int) {
 				defer wg.Done()
 
-				slog.Info("Starting subscriber", "queue", middleware.Name, "consumer", consumerID)
+				slog.Info("Starting subscriber", "queue", q.Name, "consumer", consumerID)
 
 				for {
 					select {
 					case <-stopChan:
-						slog.Info("Stopping subscriber", "queue", middleware.Name, "consumer", consumerID)
+						slog.Info("Stopping subscriber", "queue", q.Name, "consumer", consumerID)
 						return
 					default:
-						err := middleware.RecvAndProcessMessage(ctx)
+						err := q.RecvAndProcessMessage(ctx)
 						if err != nil {
-							slog.Error("Error processing message", "queue", middleware.Name, "consumer", consumerID, "error", err)
+							slog.Error("Error processing message", "queue", q.Name, "consumer", consumerID, "error", err)
 						}
 					}
 				}
-			}(ctx, middleware, i)
+			}(ctx, q, i)
 		}
 	}
 

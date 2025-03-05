@@ -21,22 +21,34 @@ queues:
     putFile: true
 
   - queueName: islandora-indexing-fcrepo-content
-    url: http://milliner:8000/
+    url: http://milliner:8000/node/:uuid
     eventType: index
+    eventMethod: POST
+    targetHeader: X-Islandora-Fedora-Endpoint
+    locationMimetype: "application/ld+json"
     consumers: 1
     noPut: true
   - queueName: islandora-indexing-fcrepo-delete
-    url: http://milliner:8000/
+    url: http://milliner:8000/node/:uuid
     eventType: index
+    eventMethod: DELETE
+    targetHeader: X-Islandora-Fedora-Endpoint
+    locationMimetype: "application/ld+json"
     consumers: 1
     noPut: true
   - queueName: islandora-indexing-fcrepo-file-external
-    url: http://milliner:8000/
+    url: http://milliner:8000/external/:uuid
+    targetHeader: X-Islandora-Fedora-Endpoint
+    locationMimetype: "text/html"
     eventType: index
+    eventMethod: POST
     consumers: 1
     noPut: true
   - queueName: islandora-indexing-fcrepo-media
-    url: http://milliner:8000/
+    url: http://milliner:8000/media/:sourceField
+    targetHeader: X-Islandora-Fedora-Endpoint
+    locationMimetype: "application/json"
+    eventMethod: POST
     eventType: index
     consumers: 1
     noPut: true
